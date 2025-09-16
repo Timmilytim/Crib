@@ -10,14 +10,12 @@ import logo from "../assets/crib.png";
 import "../styles/animatedBackground.css";
 import SlidePage from "../components/SlidePage";
 import AnimatedButton from "../components/AnimatedButton";
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import RedirectMessage from "../components/RedirectMessage"; // 👈 import the new component
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -32,11 +30,6 @@ export default function ForgotPassword() {
 
     // TODO: Call Spring Boot API to send reset OTP
     console.log("Reset OTP sent ✅", email);
-
-    // Simulate short delay then redirect
-    setTimeout(() => {
-      navigate("/verify-otp", { state: { email } });
-    }, 2000);
   };
 
   return (
@@ -120,27 +113,13 @@ export default function ForgotPassword() {
               </Box>
             </>
           ) : (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              style={{ textAlign: "center" }}
-            >
-              <Typography
-                variant="h5"
-                gutterBottom
-                sx={{
-                  fontWeight: "bold",
-                  color: "success.main",
-                  mb: 2,
-                }}
-              >
-                ✅ Code Sent!
-              </Typography>
-              <Typography variant="body1" sx={{ color: "text.secondary" }}>
-                Redirecting you to OTP verification...
-              </Typography>
-            </motion.div>
+            <RedirectMessage
+              message="Redirecting you to OTP verification..."
+              success={true}
+              delay={2000}
+              to="/verify-otp"
+              state={{ email }}
+            />
           )}
         </Paper>
       </SlidePage>

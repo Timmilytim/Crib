@@ -120,7 +120,6 @@ export default function Login() {
             autoComplete="off"
             sx={{ mt: 1, width: { xs: "100%", sm: "80%" } }}
           >
-            <motion.div whileFocus={{ scale: 1.02 }}>
               <TextField
                 margin="normal"
                 required
@@ -134,9 +133,7 @@ export default function Login() {
                 helperText={errors.email}
                 autoComplete="new-email"
               />
-            </motion.div>
 
-            <motion.div whileFocus={{ scale: 1.02 }}>
               <TextField
                 margin="normal"
                 required
@@ -162,7 +159,6 @@ export default function Login() {
                   ),
                 }}
               />
-            </motion.div>
 
             <AnimatedButton type="submit" sx={{ mt: 3, mb: 2 }} disabled={loading}>
               {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
