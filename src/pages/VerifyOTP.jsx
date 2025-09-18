@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { verifyOtp } from "../api/authService";
+import { verifyOtp, signup } from "../api/authService"; // ✅ import signup for resend
 import { useLocation } from "react-router-dom";
 import {
   Container,
@@ -8,13 +8,14 @@ import {
   Box,
   Paper,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import logo from "../assets/crib.png";
 import "../styles/animatedBackground.css";
 import SlidePage from "../components/SlidePage";
 import AnimatedButton from "../components/AnimatedButton";
 import CustomSnackbar from "../components/CustomSnackbar";
-import RedirectMessage from "../components/RedirectMessage"; // 👈 import reusable component
+import RedirectMessage from "../components/RedirectMessage";
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -24,6 +25,7 @@ export default function VerifyOTP() {
     severity: "info",
   });
   const [verified, setVerified] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false); // ✅ resend state
 
   const inputRefs = useRef([]);
   const location = useLocation();
@@ -34,21 +36,33 @@ export default function VerifyOTP() {
   };
 
   const handleChange = (e, index) => {
-    const value = e.target.value.replace(/\D/g, "");
-    if (!value) return;
-
+    const value = e.target.value.replace(/\D/g, ""); 
     const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
 
-    if (index < 5 && value) {
-      inputRefs.current[index + 1]?.focus();
+    if (value) {
+      newOtp[index] = value.slice(-1); 
+      setOtp(newOtp);
+
+      if (index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    } else {
+      newOtp[index] = "";
+      setOtp(newOtp);
     }
   };
 
   const handleKeyDown = (e, index) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      const newOtp = [...otp];
+
+      if (otp[index]) {
+        newOtp[index] = "";
+        setOtp(newOtp);
+      } else if (index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
     }
   };
 
@@ -61,7 +75,7 @@ export default function VerifyOTP() {
         const res = await verifyOtp(email, code);
         if (res.data.status === "SUCCESS") {
           showSnackbar("OTP Verified Successfully 🎉", "success");
-          setVerified(true); // 👈 trigger redirect message
+          setVerified(true);
         } else {
           showSnackbar("Invalid OTP ❌", "error");
         }
@@ -71,6 +85,25 @@ export default function VerifyOTP() {
       }
     } else {
       showSnackbar("Incomplete OTP ❌", "warning");
+    }
+  };
+
+
+  const handleResend = async () => {
+    if (!email) {
+      showSnackbar("Email missing. Please signup again ❌", "error");
+      return;
+    }
+
+    setResendLoading(true);
+    try {
+      const res = await signup({ email });
+      showSnackbar(res.data.message || "New OTP sent 🎉", "success");
+    } catch (err) {
+      console.error(err);
+      showSnackbar(err.response?.data?.message || "Resend failed ❌", "error");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -108,27 +141,11 @@ export default function VerifyOTP() {
 
           {!verified ? (
             <>
-              <Typography
-                component="h1"
-                variant="h5"
-                gutterBottom
-                sx={{
-                  fontSize: { xs: "1.5rem", sm: "2rem" },
-                  fontWeight: "bold",
-                }}
-              >
+              <Typography component="h1" variant="h5" gutterBottom sx={{ fontWeight: "bold" }}>
                 Verify OTP
               </Typography>
 
-              <Typography
-                variant="body2"
-                align="center"
-                sx={{
-                  mb: 3,
-                  fontSize: { xs: "0.85rem", sm: "1rem" },
-                  color: "text.secondary",
-                }}
-              >
+              <Typography variant="body2" align="center" sx={{ mb: 3, color: "text.secondary" }}>
                 Enter the 6-digit code sent to your email
               </Typography>
 
@@ -139,11 +156,12 @@ export default function VerifyOTP() {
                 sx={{
                   mt: 1,
                   width: "100%",
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 1,
+                  flexDirection: "column",
+                  alignItems: "center",     
+                  gap: 2,              
                 }}
               >
+                  <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
                 {otp.map((digit, index) => (
                   <TextField
                     key={index}
@@ -166,21 +184,17 @@ export default function VerifyOTP() {
               <AnimatedButton type="submit" sx={{ mt: 3, mb: 2 }}>
                 Verify
               </AnimatedButton>
+            </Box>
 
-              <Typography
-                variant="body2"
-                align="center"
-                sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" } }}
-              >
+              <Typography variant="body2" align="center" sx={{ fontSize: "0.9rem" }}>
                 Didn’t receive a code?{" "}
                 <Button
                   variant="text"
                   size="small"
-                  onClick={() =>
-                    showSnackbar("Resend OTP not implemented yet", "info")
-                  }
+                  onClick={handleResend}
+                  disabled={resendLoading}
                 >
-                  Resend
+                  {resendLoading ? <CircularProgress size={18} /> : "Resend"}
                 </Button>
               </Typography>
             </>
